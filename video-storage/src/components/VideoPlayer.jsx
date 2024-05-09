@@ -1,91 +1,63 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './VideoPlayer.css';
 
-function VideoPlayer() {
-  const [videoUrl, setVideoUrl] = useState('');
-  const [watchedTime, setWatchedTime] = useState(0);
-  const videoRef = useRef(null);
-  const lastLogged = useRef(0); 
+const VideoPlayer=()=>{
+  const [selectedVideo, setSelectedVideo]=useState(null);
+  const [playTime, setPlayTime]=useState(0); 
 
-  useEffect(() => {
-    setVideoUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4');
-  }, []);
+  const handleVideoClick=(video)=>{
+    setSelectedVideo(video);
+  };
 
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      showTotalWatchedTimeAlert();
-      event.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (watchedTime % 5 === 0) {
-      localStorage.setItem('watchedTime', watchedTime);
+  const updatePlayTime=()=>{
+    const videoElement = document.getElementById(selectedVideo === 'video1'?'video1':'video2');
+    if (videoElement && !videoElement.paused && !videoElement.ended) {
+      setPlayTime(prevPlayTime => {
+        const newPlayTime = prevPlayTime + 1;
+        if (newPlayTime % 5 === 0) {
+          localStorage.setItem('playTime', newPlayTime.toString());
+        }
+        return newPlayTime;
+      });
     }
-  }, [watchedTime]);
+  };
 
   useEffect(() => {
-    const isActive = () => {
-      if (document.visibilityState === 'hidden') {
-        showTotalWatchedTimeAlert();
-      }
-    };
-
-    document.addEventListener('visibilitychange', isActive);
-
-    return () => {
-      document.removeEventListener('visibilitychange', isActive);
-    };
-  }, []);
-
-  function handleProgress() {
-    const currentTime = videoRef.current.currentTime;
-    const segments = videoRef.current.played;
-    let totalWatchedTime = 0;
-    for (let i = 0; i < segments.length; i++) {
-      totalWatchedTime += segments.end(i) - segments.start(i);
+    if (selectedVideo) {
+      const videoElement = document.getElementById(selectedVideo === 'video1' ? 'video1' : 'video2');
+      const intervalId = setInterval(updatePlayTime, 1000);
+      return () => clearInterval(intervalId);
     }
-
-    setWatchedTime(Math.floor(totalWatchedTime));
-    
-    lastLogged.current = currentTime;
-  }
-
-  function showTotalWatchedTimeAlert() {
-    alert(`Total watched time: ${localStorage.getItem('watchedTime')} seconds`);
-  }
-
-  function handleVideoEnd() {
-    showTotalWatchedTimeAlert();
-  }
-
+  }, [selectedVideo]);
 
   return (
     <div className='container'>
-      {videoUrl ? (
-        <video
-          ref={videoRef}
-          controls
-          autoPlay
-          onTimeUpdate={handleProgress}
-          onPause={showTotalWatchedTimeAlert}
-          onEnded={handleVideoEnd}
-        >
-          <source src={videoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      ) : (
-        <p>Loading video...</p>
-      )}
+      <div className='sidebar'>
+        <button onClick={()=>handleVideoClick('video1')}>Video 1</button>
+        <button onClick={()=>handleVideoClick('video2')}>Video 2</button>
+      </div>
+
+      {/* Video container */}
+      <div className='video-container'>
+        {selectedVideo === 'video1' && (
+          <video
+            id='video1'
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            controls
+            style={{ width: '100%' }}
+          ></video>
+        )}
+        {selectedVideo==='video2' && (
+          <video
+            id='video2'
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+            controls
+            style={{ width: '100%' }}
+          ></video>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default VideoPlayer;
