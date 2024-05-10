@@ -5,18 +5,22 @@ import './VideoPlayer.css';
 const VideoPlayer = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [playTime, setPlayTime] = useState(0);
+  const [alertShown, setAlertShown] = useState(false);
 
   const handleVideoClick = (video) => {
     setSelectedVideo(video);
   };
 
   const showPlayTime = () => {
-    alert(`Total watched time: ${localStorage.getItem('playTime')} seconds`);
+    if (!alertShown) {
+      alert(`Total watched time: ${localStorage.getItem('playTime')} seconds`);
+      setAlertShown(true);
+    }
   };
 
   const updatePlayTime = () => {
     const videoElement = document.getElementById(selectedVideo.id);
-    if (document.visibilityState === 'visible' && videoElement && !videoElement.paused && !videoElement.ended) {
+    if (videoElement && !videoElement.paused && !videoElement.ended) {
       setPlayTime((prevPlayTime) => {
         const newPlayTime = prevPlayTime + 1;
         if (newPlayTime % 5 === 0) {
@@ -28,16 +32,16 @@ const VideoPlayer = () => {
   };
 
   useEffect(() => {
-    if (selectedVideo) {
-      const intervalId = setInterval(updatePlayTime, 1000);
-      return () => clearInterval(intervalId);
-    }
+    const intervalId = setInterval(updatePlayTime, 1000);
+    return () => clearInterval(intervalId);
   }, [selectedVideo]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
+      if (document.hidden) {
         showPlayTime();
+      } else {
+        setAlertShown(false); // Reset alert flag when tab becomes visible again
       }
     };
 
@@ -54,14 +58,14 @@ const VideoPlayer = () => {
       <div className='video-container'>
         {selectedVideo && (
           <video
-               id={selectedVideo.id}
-              src={selectedVideo.url}
-              controls
-              onPause={showPlayTime}
-               onEnded={showPlayTime}
-              style={{ width: '100%' }}
-            ></video>
-          )}
+            id={selectedVideo.id}
+            src={selectedVideo.url}
+            controls
+            onPause={showPlayTime}
+            onEnded={showPlayTime}
+            style={{ width: '100%' }}
+          ></video>
+        )}
       </div>
     </div>
   );
